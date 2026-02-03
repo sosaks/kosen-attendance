@@ -103,6 +103,11 @@ body {
     min-height: 100vh;
 }
 
+/* Mobile header - hidden by default on desktop */
+.mobile-header {
+    display: none;
+}
+
 /* ========================================
    Sidebar Navigation
    ======================================== */
@@ -1219,11 +1224,6 @@ body {
     .form-row {
         grid-template-columns: 1fr;
     }
-}
-
-/* Hide mobile header on desktop */
-.mobile-header {
-    display: none;
 }
 
 @media (max-width: 480px) {
