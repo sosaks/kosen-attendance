@@ -15,6 +15,7 @@ const App = {
         this.setupSettings();
         this.setupDataManagement();
         this.setupConfirmModal();
+        this.setupLogoClick();
 
         // 各モジュールを初期化
         Schedule.init();
@@ -23,6 +24,18 @@ const App = {
         Notifications.init();
 
         console.log('高専 出席管理アプリが起動しました');
+    },
+
+    /**
+     * ロゴクリックでダッシュボードに戻る
+     */
+    setupLogoClick() {
+        const mobileLogo = document.getElementById('mobileLogoHome');
+        if (mobileLogo) {
+            mobileLogo.addEventListener('click', () => {
+                this.navigateTo('dashboard');
+            });
+        }
     },
 
     /**
