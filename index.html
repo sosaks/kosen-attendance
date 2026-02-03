@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高専 出席管理アプリ | KOSEN Attendance</title>
+    <meta name="description" content="高専学生向け出席管理アプリ。時間割作成、出席記録、進級要件の自動計算機能を搭載。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- サイドナビゲーション -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">📚</span>
+                    <span class="logo-text">出席管理</span>
+                </div>
+                <button class="menu-toggle" id="menuToggle" aria-label="メニューを切り替え">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-page="dashboard">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">ダッシュボード</span>
+                </li>
+                <li class="nav-item" data-page="schedule">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">時間割</span>
+                </li>
+                <li class="nav-item" data-page="attendance">
+                    <span class="nav-icon">✅</span>
+                    <span class="nav-text">出席記録</span>
+                </li>
+                <li class="nav-item" data-page="settings">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">設定</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="semester-selector">
+                    <select id="semesterSelect">
+                        <option value="first">前期</option>
+                        <option value="second">後期</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <!-- ダッシュボード -->
+            <section class="page active" id="dashboardPage">
+                <header class="page-header">
+                    <h1>ダッシュボード</h1>
+                    <p class="page-subtitle">出席状況の概要</p>
+                </header>
+
+                <div class="stats-grid" id="statsGrid">
+                    <!-- 統計カードがここに動的に挿入される -->
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="card subjects-card">
+                        <div class="card-header">
+                            <h2>科目別出席状況</h2>
+                        </div>
+                        <div class="card-body" id="subjectsList">
+                            <!-- 科目リストがここに動的に挿入される -->
+                        </div>
+                    </div>
+
+                    <div class="card alerts-card">
+                        <div class="card-header">
+                            <h2>⚠️ 注意が必要な科目</h2>
+                        </div>
+                        <div class="card-body" id="alertsList">
+                            <!-- アラートがここに動的に挿入される -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 時間割 -->
+            <section class="page" id="schedulePage">
+                <header class="page-header">
+                    <h1>時間割</h1>
+                    <p class="page-subtitle">科目の登録・編集</p>
+                </header>
+
+                <div class="schedule-actions">
+                    <button class="btn btn-primary" id="addSubjectBtn">
+                        <span>➕</span> 科目を追加
+                    </button>
+                </div>
+
+                <div class="schedule-grid" id="scheduleGrid">
+                    <div class="schedule-header">
+                        <div class="schedule-cell time-cell"></div>
+                        <div class="schedule-cell day-cell">月</div>
+                        <div class="schedule-cell day-cell">火</div>
+                        <div class="schedule-cell day-cell">水</div>
+                        <div class="schedule-cell day-cell">木</div>
+                        <div class="schedule-cell day-cell">金</div>
+                    </div>
+                    <div class="schedule-body" id="scheduleBody">
+                        <!-- 時間割グリッドがここに動的に挿入される -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 出席記録 -->
+            <section class="page" id="attendancePage">
+                <header class="page-header">
+                    <h1>出席記録</h1>
+                    <p class="page-subtitle">今日の出席を記録</p>
+                </header>
+
+                <div class="attendance-controls">
+                    <div class="date-selector">
+                        <label for="attendanceDate">日付:</label>
+                        <input type="date" id="attendanceDate">
+                    </div>
+                </div>
+
+                <div class="today-classes" id="todayClasses">
+                    <!-- 今日の授業がここに動的に挿入される -->
+                </div>
+
+                <div class="card attendance-history-card">
+                    <div class="card-header">
+                        <h2>📋 最近の出席記録</h2>
+                    </div>
+                    <div class="card-body" id="attendanceHistory">
+                        <!-- 出席履歴がここに動的に挿入される -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 設定 -->
+            <section class="page" id="settingsPage">
+                <header class="page-header">
+                    <h1>設定</h1>
+                    <p class="page-subtitle">アプリの設定</p>
+                </header>
+
+                <div class="settings-content">
+                    <div class="card settings-card">
+                        <div class="card-header">
+                            <h2>🔔 通知設定</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="setting-item">
+                                <label class="toggle-label">
+                                    <span>出席警告通知</span>
+                                    <input type="checkbox" id="notificationToggle">
+                                    <span class="toggle-switch"></span>
+                                </label>
+                                <p class="setting-description">欠席上限に近づいた際に通知を受け取る</p>
+                            </div>
+                            <div class="setting-item">
+                                <label for="warningThreshold">警告しきい値（残り欠席可能回数）</label>
+                                <input type="number" id="warningThreshold" min="1" max="5" value="3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card settings-card">
+                        <div class="card-header">
+                            <h2>💾 データ管理</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="setting-item">
+                                <button class="btn btn-secondary" id="exportDataBtn">
+                                    📤 データをエクスポート
+                                </button>
+                            </div>
+                            <div class="setting-item">
+                                <button class="btn btn-secondary" id="importDataBtn">
+                                    📥 データをインポート
+                                </button>
+                                <input type="file" id="importDataInput" accept=".json" hidden>
+                            </div>
+                            <div class="setting-item">
+                                <button class="btn btn-danger" id="clearDataBtn">
+                                    🗑️ 全データを削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card settings-card">
+                        <div class="card-header">
+                            <h2>ℹ️ アプリ情報</h2>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>高専 出席管理アプリ</strong></p>
+                            <p>バージョン: 1.0.0</p>
+                            <p>対象: 全国の高等専門学校 学生</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- モーダル: 科目追加/編集 -->
+    <div class="modal-overlay" id="subjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="subjectModalTitle">科目を追加</h2>
+                <button class="modal-close" id="closeSubjectModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="subjectForm">
+                    <input type="hidden" id="subjectId">
+                    <div class="form-group">
+                        <label for="subjectName">科目名 *</label>
+                        <input type="text" id="subjectName" required placeholder="例: 数学I">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subjectDay">曜日 *</label>
+                            <select id="subjectDay" required>
+                                <option value="0">月曜日</option>
+                                <option value="1">火曜日</option>
+                                <option value="2">水曜日</option>
+                                <option value="3">木曜日</option>
+                                <option value="4">金曜日</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="subjectPeriod">時限 *</label>
+                            <select id="subjectPeriod" required>
+                                <option value="1">1限</option>
+                                <option value="2">2限</option>
+                                <option value="3">3限</option>
+                                <option value="4">4限</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="totalClasses">総授業回数 *</label>
+                        <input type="number" id="totalClasses" required min="1" max="30" value="15" placeholder="15">
+                    </div>
+                    <div class="form-group">
+                        <label for="subjectColor">カラー</label>
+                        <input type="color" id="subjectColor" value="#6366f1">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-danger" id="deleteSubjectBtn"
+                            style="margin-right: auto; display: none;">🗑️ 削除</button>
+                        <button type="button" class="btn btn-secondary" id="cancelSubjectBtn">キャンセル</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- モーダル: 確認ダイアログ -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h2 id="confirmModalTitle">確認</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage">この操作を実行しますか？</p>
+                <div class="form-actions">
+                    <button class="btn btn-secondary" id="confirmCancelBtn">キャンセル</button>
+                    <button class="btn btn-danger" id="confirmOkBtn">実行</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JavaScript -->
+    <script src="js/storage.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/schedule.js"></script>
+    <script src="js/attendance.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

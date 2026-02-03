@@ -1,0 +1,291 @@
+/**
+ * 高専 出席管理アプリ - ストレージモジュール
+ * LocalStorageを使用したデータ永続化
+ */
+
+const Storage = {
+    KEYS: {
+        SUBJECTS: 'kosen_attendance_subjects',
+        ATTENDANCE: 'kosen_attendance_records',
+        SETTINGS: 'kosen_attendance_settings',
+        SEMESTER: 'kosen_attendance_semester'
+    },
+
+    /**
+     * UUIDを生成
+     */
+    generateId() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    },
+
+    /**
+     * データを取得
+     */
+    get(key) {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error('Storage get error:', e);
+            return null;
+        }
+    },
+
+    /**
+     * データを保存
+     */
+    set(key, data) {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            return true;
+        } catch (e) {
+            console.error('Storage set error:', e);
+            return false;
+        }
+    },
+
+    /**
+     * データを削除
+     */
+    remove(key) {
+        try {
+            localStorage.removeItem(key);
+            return true;
+        } catch (e) {
+            console.error('Storage remove error:', e);
+            return false;
+        }
+    },
+
+    // ========== 科目関連 ==========
+
+    /**
+     * 全科目を取得
+     */
+    getSubjects() {
+        return this.get(this.KEYS.SUBJECTS) || [];
+    },
+
+    /**
+     * 科目を保存（全て）
+     */
+    saveSubjects(subjects) {
+        return this.set(this.KEYS.SUBJECTS, subjects);
+    },
+
+    /**
+     * 科目を追加
+     */
+    addSubject(subject) {
+        const subjects = this.getSubjects();
+        const newSubject = {
+            id: this.generateId(),
+            createdAt: new Date().toISOString(),
+            ...subject
+        };
+        subjects.push(newSubject);
+        this.saveSubjects(subjects);
+        return newSubject;
+    },
+
+    /**
+     * 科目を更新
+     */
+    updateSubject(id, updates) {
+        const subjects = this.getSubjects();
+        const index = subjects.findIndex(s => s.id === id);
+        if (index !== -1) {
+            subjects[index] = { ...subjects[index], ...updates, updatedAt: new Date().toISOString() };
+            this.saveSubjects(subjects);
+            return subjects[index];
+        }
+        return null;
+    },
+
+    /**
+     * 科目を削除
+     */
+    deleteSubject(id) {
+        const subjects = this.getSubjects();
+        const filtered = subjects.filter(s => s.id !== id);
+        this.saveSubjects(filtered);
+        // 関連する出席記録も削除
+        const attendance = this.getAttendance();
+        const filteredAttendance = attendance.filter(a => a.subjectId !== id);
+        this.saveAttendance(filteredAttendance);
+        return true;
+    },
+
+    /**
+     * IDで科目を取得
+     */
+    getSubjectById(id) {
+        const subjects = this.getSubjects();
+        return subjects.find(s => s.id === id) || null;
+    },
+
+    /**
+     * 学期で科目をフィルタリング
+     */
+    getSubjectsBySemester(semester) {
+        const subjects = this.getSubjects();
+        return subjects.filter(s => s.semester === semester);
+    },
+
+    // ========== 出席記録関連 ==========
+
+    /**
+     * 全出席記録を取得
+     */
+    getAttendance() {
+        return this.get(this.KEYS.ATTENDANCE) || [];
+    },
+
+    /**
+     * 出席記録を保存（全て）
+     */
+    saveAttendance(attendance) {
+        return this.set(this.KEYS.ATTENDANCE, attendance);
+    },
+
+    /**
+     * 出席記録を追加/更新
+     */
+    setAttendanceRecord(subjectId, date, status) {
+        const attendance = this.getAttendance();
+        const existingIndex = attendance.findIndex(
+            a => a.subjectId === subjectId && a.date === date
+        );
+
+        if (existingIndex !== -1) {
+            // 更新
+            attendance[existingIndex].status = status;
+            attendance[existingIndex].updatedAt = new Date().toISOString();
+        } else {
+            // 新規追加
+            attendance.push({
+                id: this.generateId(),
+                subjectId,
+                date,
+                status,
+                createdAt: new Date().toISOString()
+            });
+        }
+
+        this.saveAttendance(attendance);
+        return true;
+    },
+
+    /**
+     * 特定の科目の出席記録を取得
+     */
+    getAttendanceBySubject(subjectId) {
+        const attendance = this.getAttendance();
+        return attendance.filter(a => a.subjectId === subjectId);
+    },
+
+    /**
+     * 特定の日付の出席記録を取得
+     */
+    getAttendanceByDate(date) {
+        const attendance = this.getAttendance();
+        return attendance.filter(a => a.date === date);
+    },
+
+    /**
+     * 特定の科目・日付の出席記録を取得
+     */
+    getAttendanceRecord(subjectId, date) {
+        const attendance = this.getAttendance();
+        return attendance.find(a => a.subjectId === subjectId && a.date === date) || null;
+    },
+
+    /**
+     * 出席記録を削除
+     */
+    deleteAttendanceRecord(id) {
+        const attendance = this.getAttendance();
+        const filtered = attendance.filter(a => a.id !== id);
+        this.saveAttendance(filtered);
+        return true;
+    },
+
+    // ========== 設定関連 ==========
+
+    /**
+     * 設定を取得
+     */
+    getSettings() {
+        return this.get(this.KEYS.SETTINGS) || {
+            notificationsEnabled: false,
+            warningThreshold: 3
+        };
+    },
+
+    /**
+     * 設定を保存
+     */
+    saveSettings(settings) {
+        return this.set(this.KEYS.SETTINGS, settings);
+    },
+
+    /**
+     * 現在の学期を取得
+     */
+    getCurrentSemester() {
+        return this.get(this.KEYS.SEMESTER) || 'first';
+    },
+
+    /**
+     * 現在の学期を設定
+     */
+    setCurrentSemester(semester) {
+        return this.set(this.KEYS.SEMESTER, semester);
+    },
+
+    // ========== エクスポート/インポート ==========
+
+    /**
+     * 全データをエクスポート
+     */
+    exportData() {
+        return {
+            subjects: this.getSubjects(),
+            attendance: this.getAttendance(),
+            settings: this.getSettings(),
+            semester: this.getCurrentSemester(),
+            exportedAt: new Date().toISOString()
+        };
+    },
+
+    /**
+     * データをインポート
+     */
+    importData(data) {
+        try {
+            if (data.subjects) this.saveSubjects(data.subjects);
+            if (data.attendance) this.saveAttendance(data.attendance);
+            if (data.settings) this.saveSettings(data.settings);
+            if (data.semester) this.setCurrentSemester(data.semester);
+            return true;
+        } catch (e) {
+            console.error('Import error:', e);
+            return false;
+        }
+    },
+
+    /**
+     * 全データをクリア
+     */
+    clearAllData() {
+        Object.values(this.KEYS).forEach(key => this.remove(key));
+        return true;
+    }
+};
+
+// グローバルに公開
+window.Storage = Storage;
