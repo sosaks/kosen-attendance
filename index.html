@@ -15,6 +15,19 @@
 
 <body>
     <div class="app-container">
+        <!-- モバイル用固定ヘッダー -->
+        <header class="mobile-header" id="mobileHeader">
+            <div class="logo">
+                <span class="logo-icon">📚</span>
+                <span class="logo-text">出席管理</span>
+            </div>
+            <button class="menu-toggle" id="menuToggle" aria-label="メニューを切り替え">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </header>
+
         <!-- サイドナビゲーション -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -55,6 +68,9 @@
                 </div>
             </div>
         </nav>
+
+        <!-- サイドバーオーバーレイ（モバイル用） -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <!-- メインコンテンツ -->
         <main class="main-content">

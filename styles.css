@@ -1131,28 +1131,36 @@ body {
 
 @media (max-width: 768px) {
 
-    /* Mobile header - always visible */
-    .sidebar-header {
+    /* Mobile header - always visible at top */
+    .mobile-header {
+        display: flex;
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
+        height: 70px;
+        padding: 0 20px;
         background: rgba(15, 23, 42, 0.95);
-        z-index: 102;
         backdrop-filter: blur(20px);
         border-bottom: 1px solid var(--border-color);
+        z-index: 200;
+        align-items: center;
+        justify-content: space-between;
     }
 
     .menu-toggle {
         display: flex;
     }
 
+    /* Hide sidebar header on mobile (we use mobile-header instead) */
+    .sidebar-header {
+        display: none;
+    }
+
     /* Sidebar slides in from left */
     .sidebar {
         transform: translateX(-100%);
-        width: 100%;
-        max-width: 300px;
-        padding-top: 80px;
+        z-index: 150;
     }
 
     .sidebar.open {
@@ -1160,21 +1168,25 @@ body {
     }
 
     /* Overlay when sidebar is open */
-    .sidebar.open::after {
-        content: '';
+    .sidebar-overlay {
+        display: none;
         position: fixed;
         top: 0;
-        left: 300px;
+        left: 0;
         right: 0;
         bottom: 0;
         background: rgba(0, 0, 0, 0.5);
-        z-index: -1;
+        z-index: 140;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
     }
 
     .main-content {
         margin-left: 0;
         padding: 20px;
-        padding-top: 100px;
+        padding-top: 90px;
     }
 
     .page-header h1 {
@@ -1207,6 +1219,11 @@ body {
     .form-row {
         grid-template-columns: 1fr;
     }
+}
+
+/* Hide mobile header on desktop */
+.mobile-header {
+    display: none;
 }
 
 @media (max-width: 480px) {

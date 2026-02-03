@@ -110,18 +110,37 @@ const App = {
     setupMobileMenu() {
         const toggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
 
         if (!toggle || !sidebar) return;
 
-        toggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
+        const openMenu = () => {
+            sidebar.classList.add('open');
+            if (overlay) overlay.classList.add('active');
+        };
+
+        const closeMenu = () => {
+            sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+        };
+
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sidebar.classList.contains('open')) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
         });
 
-        // サイドバー外をクリックで閉じる
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-            }
+        // オーバーレイクリックで閉じる
+        if (overlay) {
+            overlay.addEventListener('click', closeMenu);
+        }
+
+        // ナビゲーションアイテムクリックで閉じる
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', closeMenu);
         });
     },
 
