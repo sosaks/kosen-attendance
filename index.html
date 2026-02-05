@@ -106,7 +106,6 @@
                 </div>
             </section>
 
-            <!-- 時間割 -->
             <section class="page" id="schedulePage">
                 <header class="page-header">
                     <h1>時間割</h1>
@@ -116,6 +115,9 @@
                 <div class="schedule-actions">
                     <button class="btn btn-primary" id="addSubjectBtn">
                         <span>➕</span> 科目を追加
+                    </button>
+                    <button class="btn btn-secondary" id="addSupplementaryBtn">
+                        <span>📝</span> 補講を追加
                     </button>
                 </div>
 
@@ -132,6 +134,21 @@
                         <!-- 時間割グリッドがここに動的に挿入される -->
                     </div>
                 </div>
+
+                <!-- 補講一覧 -->
+                <div class="card supplementary-list-card" id="supplementaryListCard" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h2>📝 登録済み補講</h2>
+                    </div>
+                    <div class="card-body" id="supplementaryList">
+                        <!-- 補講リストがここに動的に挿入される -->
+                    </div>
+                </div>
+
+                <!-- FAB: 科目追加ボタン -->
+                <button class="fab" id="fabAddSubject" title="科目を追加">
+                    ➕
+                </button>
             </section>
 
             <!-- 出席記録 -->
@@ -170,6 +187,35 @@
                 </header>
 
                 <div class="settings-content">
+                    <div class="card settings-card">
+                        <div class="card-header">
+                            <h2>🎨 テーマ設定</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="setting-item">
+                                <p class="setting-label">カラーテーマを選択</p>
+                                <div class="theme-picker" id="themePicker">
+                                    <button class="theme-dot" data-theme="dark" title="ダーク">
+                                        <span class="theme-dot-inner dark"></span>
+                                        <span class="theme-dot-label">ダーク</span>
+                                    </button>
+                                    <button class="theme-dot" data-theme="light" title="ライト">
+                                        <span class="theme-dot-inner light"></span>
+                                        <span class="theme-dot-label">ライト</span>
+                                    </button>
+                                    <button class="theme-dot" data-theme="rose" title="ローズ">
+                                        <span class="theme-dot-inner rose"></span>
+                                        <span class="theme-dot-label">ローズ</span>
+                                    </button>
+                                    <button class="theme-dot" data-theme="mint" title="ミント">
+                                        <span class="theme-dot-inner mint"></span>
+                                        <span class="theme-dot-label">ミント</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card settings-card">
                         <div class="card-header">
                             <h2>🔔 通知設定</h2>
@@ -221,7 +267,7 @@
                         <div class="card-body">
                             <p><strong>高専 出席管理アプリ</strong></p>
                             <p>バージョン: 1.0.0</p>
-                            <p>対象: 全国の高等専門学校 学生</p>
+                            <p>対象: 学生！</p>
                         </div>
                     </div>
                 </div>
@@ -272,6 +318,14 @@
                         <label for="subjectColor">カラー</label>
                         <input type="color" id="subjectColor" value="#6366f1">
                     </div>
+                    <div class="form-group">
+                        <label for="linkedSubject">他の科目と紐付け 🔗</label>
+                        <select id="linkedSubject">
+                            <option value="">紐付けなし（新規科目）</option>
+                            <!-- 既存の科目がここに動的に追加される -->
+                        </select>
+                        <p class="setting-description">同じ授業が週に複数回ある場合、紐付けると出席率が統合されます</p>
+                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-danger" id="deleteSubjectBtn"
                             style="margin-right: auto; display: none;">🗑️ 削除</button>
@@ -299,8 +353,66 @@
         </div>
     </div>
 
+    <!-- モーダル: 補講追加 -->
+    <div class="modal-overlay" id="supplementaryModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>補講を追加</h2>
+                <button class="modal-close" id="closeSupplementaryModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="supplementaryForm">
+                    <div class="form-group">
+                        <label for="suppDate">日付 *</label>
+                        <input type="date" id="suppDate" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="suppDay">曜日 *</label>
+                            <select id="suppDay" required>
+                                <option value="0">月曜日</option>
+                                <option value="1">火曜日</option>
+                                <option value="2">水曜日</option>
+                                <option value="3">木曜日</option>
+                                <option value="4">金曜日</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="suppPeriod">時限 *</label>
+                            <select id="suppPeriod" required>
+                                <option value="1">1限</option>
+                                <option value="2">2限</option>
+                                <option value="3">3限</option>
+                                <option value="4">4限</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="suppSubject">補講で入る科目 *</label>
+                        <select id="suppSubject" required>
+                            <!-- 科目がここに動的に追加される -->
+                        </select>
+                    </div>
+                    <p class="setting-description">※ この日付の指定した時限だけ、選択した科目に置き換わります。翌週は元の授業に戻ります。</p>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelSupplementaryBtn">キャンセル</button>
+                        <button type="submit" class="btn btn-primary">追加</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- トースト通知 -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- モバイル用学期セレクター -->
+    <div class="mobile-semester-bar" id="mobileSemesterBar">
+        <select id="mobileSemesterSelect">
+            <option value="first">📅 前期</option>
+            <option value="second">📅 後期</option>
+        </select>
+    </div>
 
     <!-- JavaScript -->
     <script src="js/storage.js"></script>

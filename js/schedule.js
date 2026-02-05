@@ -20,6 +20,7 @@ const Schedule = {
      */
     init() {
         this.renderScheduleGrid();
+        this.renderSupplementaryList();
         this.setupEventListeners();
     },
 
@@ -31,6 +32,12 @@ const Schedule = {
         const addBtn = document.getElementById('addSubjectBtn');
         if (addBtn) {
             addBtn.addEventListener('click', () => this.openSubjectModal());
+        }
+
+        // FAB科目追加ボタン
+        const fabBtn = document.getElementById('fabAddSubject');
+        if (fabBtn) {
+            fabBtn.addEventListener('click', () => this.openSubjectModal());
         }
 
         // モーダルのクローズボタン
@@ -71,6 +78,52 @@ const Schedule = {
                 }
             });
         }
+
+        // 補講追加ボタン
+        const addSuppBtn = document.getElementById('addSupplementaryBtn');
+        if (addSuppBtn) {
+            addSuppBtn.addEventListener('click', () => this.openSupplementaryModal());
+        }
+
+        // 補講モーダルのクローズボタン
+        const closeSuppBtn = document.getElementById('closeSupplementaryModal');
+        if (closeSuppBtn) {
+            closeSuppBtn.addEventListener('click', () => this.closeSupplementaryModal());
+        }
+
+        // 補講キャンセルボタン
+        const cancelSuppBtn = document.getElementById('cancelSupplementaryBtn');
+        if (cancelSuppBtn) {
+            cancelSuppBtn.addEventListener('click', () => this.closeSupplementaryModal());
+        }
+
+        // 補講フォーム送信
+        const suppForm = document.getElementById('supplementaryForm');
+        if (suppForm) {
+            suppForm.addEventListener('submit', (e) => this.handleSupplementarySubmit(e));
+        }
+
+        // 補講モーダルオーバーレイクリックで閉じる
+        const suppOverlay = document.getElementById('supplementaryModal');
+        if (suppOverlay) {
+            suppOverlay.addEventListener('click', (e) => {
+                if (e.target === suppOverlay) {
+                    this.closeSupplementaryModal();
+                }
+            });
+        }
+
+        // 日付変更時に曜日を自動設定
+        const suppDateInput = document.getElementById('suppDate');
+        if (suppDateInput) {
+            suppDateInput.addEventListener('change', () => {
+                const date = new Date(suppDateInput.value);
+                const dayOfWeek = date.getDay() - 1; // 0=月, 1=火, ...
+                if (dayOfWeek >= 0 && dayOfWeek <= 4) {
+                    document.getElementById('suppDay').value = dayOfWeek;
+                }
+            });
+        }
     },
 
     /**
@@ -104,11 +157,12 @@ const Schedule = {
                 if (subject) {
                     const stats = Calculator.calculateStats(subject.id);
                     const bgColor = subject.color || '#6366f1';
+                    const linkedIcon = stats.isLinked ? '<span class="linked-badge" title="紐付け済み">🔗</span>' : '';
                     html += `
             <div class="class-cell">
               <div class="class-item" style="background: ${bgColor}20; border: 1px solid ${bgColor}50;" 
                    onclick="Schedule.editSubject('${subject.id}')">
-                <div class="class-name">${subject.name}</div>
+                <div class="class-name">${linkedIcon}${subject.name}</div>
                 <div class="class-info">
                   出席: ${stats.attendedClasses}/${stats.totalClasses}
                 </div>
@@ -148,6 +202,9 @@ const Schedule = {
         document.getElementById('subjectPeriod').value = period;
         document.getElementById('subjectColor').value = '#6366f1';
 
+        // 紐付け科目ドロップダウンを初期化
+        this.populateLinkingDropdown(null);
+
         // 削除ボタンを非表示（新規追加時）
         const deleteBtn = document.getElementById('deleteSubjectBtn');
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -176,6 +233,11 @@ const Schedule = {
         document.getElementById('subjectPeriod').value = subject.period;
         document.getElementById('totalClasses').value = subject.totalClasses;
         document.getElementById('subjectColor').value = subject.color || '#6366f1';
+
+        // 紐付け科目ドロップダウンを初期化
+        this.populateLinkingDropdown(subject.id);
+        // 既存の紐付けを反映
+        document.getElementById('linkedSubject').value = subject.linkedSubjectId || '';
 
         // 削除ボタンを表示（編集時）
         const deleteBtn = document.getElementById('deleteSubjectBtn');
@@ -228,13 +290,16 @@ const Schedule = {
             return;
         }
 
+        const linkedSubjectId = document.getElementById('linkedSubject').value || null;
+
         const subjectData = {
             name,
             dayOfWeek,
             period,
             totalClasses,
             color,
-            semester
+            semester,
+            linkedSubjectId
         };
 
         if (id) {
@@ -277,22 +342,238 @@ const Schedule = {
     },
 
     /**
-     * 特定の日付の授業を取得
+     * 特定の日付の授業を取得（補講を考慮）
      * @param {Date} date - 日付
-     * @returns {array} 授業リスト
+     * @returns {array} 授業リスト（補講がある場合は置き換え、isSupplementaryフラグ付き）
      */
     getClassesForDate(date) {
         const dayOfWeek = date.getDay() - 1; // 0=月, 1=火, ...
         if (dayOfWeek < 0 || dayOfWeek > 4) return []; // 土日は空
 
+        const dateStr = date.toISOString().split('T')[0];
         const semester = Storage.getCurrentSemester();
         const subjects = Storage.getSubjectsBySemester(semester);
 
-        return subjects
-            .filter(s => s.dayOfWeek === dayOfWeek)
-            .sort((a, b) => a.period - b.period);
+        // 全4限のスロットをチェック
+        const classes = [];
+        for (let period = 1; period <= 4; period++) {
+            // この時限の補講をチェック
+            const supplementary = Storage.getSupplementaryClassForSlot(dateStr, dayOfWeek, period);
+
+            if (supplementary) {
+                // 補講がある場合、補講の科目を取得
+                const suppSubject = Storage.getSubjectById(supplementary.subjectId);
+                if (suppSubject) {
+                    classes.push({
+                        ...suppSubject,
+                        period: period,
+                        dayOfWeek: dayOfWeek,
+                        isSupplementary: true,
+                        supplementaryId: supplementary.id
+                    });
+                }
+            } else {
+                // 補講がない場合、通常の授業
+                const regularSubject = subjects.find(s => s.dayOfWeek === dayOfWeek && s.period === period);
+                if (regularSubject) {
+                    classes.push({
+                        ...regularSubject,
+                        isSupplementary: false
+                    });
+                }
+            }
+        }
+
+        return classes.sort((a, b) => a.period - b.period);
+    },
+
+    /**
+     * 紐付け科目ドロップダウンを初期化
+     * @param {string|null} excludeId - 除外する科目ID（編集中の科目）
+     */
+    populateLinkingDropdown(excludeId) {
+        const dropdown = document.getElementById('linkedSubject');
+        if (!dropdown) return;
+
+        const semester = Storage.getCurrentSemester();
+        const availableSubjects = Storage.getAvailableSubjectsForLinking(semester, excludeId);
+
+        // ドロップダウンをリセット
+        dropdown.innerHTML = '<option value="">紐付けなし（新規科目）</option>';
+
+        // 紐付け可能な科目を追加
+        availableSubjects.forEach(subject => {
+            const dayName = this.DAYS[subject.dayOfWeek];
+            const option = document.createElement('option');
+            option.value = subject.id;
+            option.textContent = `${subject.name}（${dayName}${subject.period}限）`;
+            dropdown.appendChild(option);
+        });
+    },
+
+    // ========== 補講関連 ==========
+
+    /**
+     * 補講モーダルを開く
+     */
+    openSupplementaryModal() {
+        const modal = document.getElementById('supplementaryModal');
+        const form = document.getElementById('supplementaryForm');
+        if (!modal || !form) return;
+
+        // フォームをリセット
+        form.reset();
+
+        // 今日の日付をデフォルトに
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('suppDate').value = today;
+
+        // 科目ドロップダウンを初期化
+        this.populateSupplementarySubjectDropdown();
+
+        modal.classList.add('active');
+    },
+
+    /**
+     * 補講モーダルを閉じる
+     */
+    closeSupplementaryModal() {
+        const modal = document.getElementById('supplementaryModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+    },
+
+    /**
+     * 補講の科目ドロップダウンを初期化
+     */
+    populateSupplementarySubjectDropdown() {
+        const dropdown = document.getElementById('suppSubject');
+        if (!dropdown) return;
+
+        const semester = Storage.getCurrentSemester();
+        const subjects = Storage.getSubjectsBySemester(semester);
+
+        dropdown.innerHTML = '';
+
+        if (subjects.length === 0) {
+            dropdown.innerHTML = '<option value="">科目がありません</option>';
+            return;
+        }
+
+        subjects.forEach(subject => {
+            const dayName = this.DAYS[subject.dayOfWeek];
+            const option = document.createElement('option');
+            option.value = subject.id;
+            option.textContent = `${subject.name}（${dayName}${subject.period}限）`;
+            dropdown.appendChild(option);
+        });
+    },
+
+    /**
+     * 補講フォームを処理
+     * @param {Event} e - イベント
+     */
+    handleSupplementarySubmit(e) {
+        e.preventDefault();
+
+        const date = document.getElementById('suppDate').value;
+        const dayOfWeek = parseInt(document.getElementById('suppDay').value);
+        const period = parseInt(document.getElementById('suppPeriod').value);
+        const subjectId = document.getElementById('suppSubject').value;
+        const semester = Storage.getCurrentSemester();
+
+        if (!date || !subjectId) {
+            App.showToast('日付と科目を選択してください', 'error');
+            return;
+        }
+
+        // 同じ日付・時限に既に補講があるかチェック
+        const existing = Storage.getSupplementaryClassForSlot(date, dayOfWeek, period);
+        if (existing) {
+            App.showToast('この日時には既に補講が登録されています', 'error');
+            return;
+        }
+
+        // 補講を追加
+        Storage.addSupplementaryClass({
+            date,
+            dayOfWeek,
+            period,
+            subjectId,
+            semester
+        });
+
+        App.showToast('補講を追加しました', 'success');
+        this.closeSupplementaryModal();
+        this.renderSupplementaryList();
+    },
+
+    /**
+     * 補講を削除
+     * @param {string} id - 補講ID
+     */
+    deleteSupplementary(id) {
+        App.showConfirm(
+            '補講を削除',
+            'この補講を削除しますか？',
+            () => {
+                Storage.deleteSupplementaryClass(id);
+                this.renderSupplementaryList();
+                App.showToast('補講を削除しました', 'success');
+            }
+        );
+    },
+
+    /**
+     * 補講一覧をレンダリング
+     */
+    renderSupplementaryList() {
+        const container = document.getElementById('supplementaryList');
+        const card = document.getElementById('supplementaryListCard');
+        if (!container) return;
+
+        const semester = Storage.getCurrentSemester();
+        const supplementaries = Storage.getSupplementaryClassesBySemester(semester);
+
+        if (supplementaries.length === 0) {
+            if (card) card.style.display = 'none';
+            return;
+        }
+
+        if (card) card.style.display = 'block';
+
+        // 日付でソート
+        const sorted = [...supplementaries].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        let html = '';
+        sorted.forEach(supp => {
+            const subject = Storage.getSubjectById(supp.subjectId);
+            if (!subject) return;
+
+            const date = new Date(supp.date);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+            const dayOfWeekName = dayNames[date.getDay()];
+
+            html += `
+                <div class="supplementary-item">
+                    <div class="supplementary-info">
+                        <span class="supplementary-date">${month}/${day}(${dayOfWeekName})</span>
+                        <span class="supplementary-period">${supp.period}限</span>
+                        <span class="supplementary-subject" style="color: ${subject.color || '#6366f1'}">${subject.name}</span>
+                        <span class="supplementary-badge">補講</span>
+                    </div>
+                    <button class="btn btn-small btn-danger" onclick="Schedule.deleteSupplementary('${supp.id}')">削除</button>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
     }
 };
 
 // グローバルに公開
 window.Schedule = Schedule;
+

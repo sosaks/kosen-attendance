@@ -13,7 +13,25 @@ const Calculator = {
         const subject = Storage.getSubjectById(subjectId);
         if (!subject) return null;
 
-        const records = Storage.getAttendanceBySubject(subjectId);
+        // 紐付けられた科目グループを取得
+        const linkedSubjects = Storage.getLinkedSubjects(subjectId);
+
+        // 紐付けられた全科目の出席記録を集約
+        let allRecords = [];
+        let totalClassesSum = 0;
+
+        if (linkedSubjects.length > 1) {
+            // 紐付けがある場合: 全科目の記録を合算
+            linkedSubjects.forEach(s => {
+                const records = Storage.getAttendanceBySubject(s.id);
+                allRecords = allRecords.concat(records);
+                totalClassesSum += s.totalClasses || 15;
+            });
+        } else {
+            // 紐付けがない場合: 通常の計算
+            allRecords = Storage.getAttendanceBySubject(subjectId);
+            totalClassesSum = subject.totalClasses || 15;
+        }
 
         // 各ステータスをカウント
         let presentCount = 0;
@@ -21,7 +39,7 @@ const Calculator = {
         let lateCount = 0;
         let earlyCount = 0;
 
-        records.forEach(record => {
+        allRecords.forEach(record => {
             switch (record.status) {
                 case 'present':
                     presentCount++;
@@ -45,11 +63,11 @@ const Calculator = {
         // 総欠課数
         const totalAbsences = absentCount + lateAbsences + earlyAbsences;
 
-        // 総授業回数
-        const totalClasses = subject.totalClasses || 15;
+        // 総授業回数（紐付け科目がある場合は合計）
+        const totalClasses = totalClassesSum;
 
         // 記録された授業数
-        const recordedClasses = records.length;
+        const recordedClasses = allRecords.length;
 
         // 出席数（遅刻・早退は出席としてカウント、ただし3回まで）
         const attendedClasses = presentCount + lateCount + earlyCount;
@@ -79,6 +97,10 @@ const Calculator = {
             riskLevel = 'warning';
         }
 
+        // 紐付け情報
+        const isLinked = linkedSubjects.length > 1;
+        const linkedCount = linkedSubjects.length;
+
         return {
             subjectId,
             subjectName: subject.name,
@@ -98,7 +120,9 @@ const Calculator = {
             remainingRequired,
             remainingAbsences,
             attendanceRate,
-            riskLevel
+            riskLevel,
+            isLinked,
+            linkedCount
         };
     },
 

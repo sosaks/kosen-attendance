@@ -8,7 +8,8 @@ const Storage = {
         SUBJECTS: 'kosen_attendance_subjects',
         ATTENDANCE: 'kosen_attendance_records',
         SETTINGS: 'kosen_attendance_settings',
-        SEMESTER: 'kosen_attendance_semester'
+        SEMESTER: 'kosen_attendance_semester',
+        SUPPLEMENTARY: 'kosen_attendance_supplementary'
     },
 
     /**
@@ -222,7 +223,8 @@ const Storage = {
     getSettings() {
         return this.get(this.KEYS.SETTINGS) || {
             notificationsEnabled: false,
-            warningThreshold: 3
+            warningThreshold: 3,
+            theme: 'dark'
         };
     },
 
@@ -245,6 +247,123 @@ const Storage = {
      */
     setCurrentSemester(semester) {
         return this.set(this.KEYS.SEMESTER, semester);
+    },
+
+    // ========== 科目紐付け関連 ==========
+
+    /**
+     * 紐付けられた科目グループを取得（親科目IDをキーにした全ての関連科目）
+     * @param {string} subjectId - 科目ID（親でも子でも可）
+     * @returns {array} 紐付けられた科目の配列（親科目を含む）
+     */
+    getLinkedSubjects(subjectId) {
+        const subjects = this.getSubjects();
+        const subject = subjects.find(s => s.id === subjectId);
+        if (!subject) return [];
+
+        // 親科目IDを特定（自身がlinkedSubjectIdを持っていればそれが親、なければ自身が親）
+        const rootId = subject.linkedSubjectId || subject.id;
+
+        // 親科目と、親科目に紐付けられた全ての子科目を取得
+        return subjects.filter(s => s.id === rootId || s.linkedSubjectId === rootId);
+    },
+
+    /**
+     * 親科目を取得
+     * @param {string} subjectId - 科目ID
+     * @returns {object|null} 親科目オブジェクト
+     */
+    getRootSubject(subjectId) {
+        const subject = this.getSubjectById(subjectId);
+        if (!subject) return null;
+
+        if (subject.linkedSubjectId) {
+            return this.getSubjectById(subject.linkedSubjectId);
+        }
+        return subject;
+    },
+
+    /**
+     * 紐付け可能な既存科目を取得（同じ学期で、まだ子科目でない科目）
+     * @param {string} semester - 学期
+     * @param {string} excludeId - 除外する科目ID（編集中の科目）
+     * @returns {array} 紐付け可能な科目の配列
+     */
+    getAvailableSubjectsForLinking(semester, excludeId = null) {
+        const subjects = this.getSubjectsBySemester(semester);
+        // 子科目でない（linkedSubjectIdがnull/undefined）かつ、自身でない科目
+        return subjects.filter(s => !s.linkedSubjectId && s.id !== excludeId);
+    },
+
+    // ========== 補講関連 ==========
+
+    /**
+     * 全補講を取得
+     */
+    getSupplementaryClasses() {
+        return this.get(this.KEYS.SUPPLEMENTARY) || [];
+    },
+
+    /**
+     * 補講を保存（全て）
+     */
+    saveSupplementaryClasses(classes) {
+        return this.set(this.KEYS.SUPPLEMENTARY, classes);
+    },
+
+    /**
+     * 補講を追加
+     * @param {object} suppClass - 補講データ {date, dayOfWeek, period, subjectId, semester}
+     */
+    addSupplementaryClass(suppClass) {
+        const classes = this.getSupplementaryClasses();
+        const newClass = {
+            id: this.generateId(),
+            createdAt: new Date().toISOString(),
+            ...suppClass
+        };
+        classes.push(newClass);
+        this.saveSupplementaryClasses(classes);
+        return newClass;
+    },
+
+    /**
+     * 補講を削除
+     * @param {string} id - 補講ID
+     */
+    deleteSupplementaryClass(id) {
+        const classes = this.getSupplementaryClasses();
+        const filtered = classes.filter(c => c.id !== id);
+        this.saveSupplementaryClasses(filtered);
+        return true;
+    },
+
+    /**
+     * 特定の日付・曜日・時限の補講を取得
+     * @param {string} date - 日付 (YYYY-MM-DD)
+     * @param {number} dayOfWeek - 曜日 (0-4)
+     * @param {number} period - 時限 (1-4)
+     * @returns {object|null} 補講データ
+     */
+    getSupplementaryClassForSlot(date, dayOfWeek, period) {
+        const classes = this.getSupplementaryClasses();
+        const semester = this.getCurrentSemester();
+        return classes.find(c =>
+            c.date === date &&
+            c.dayOfWeek === dayOfWeek &&
+            c.period === period &&
+            c.semester === semester
+        ) || null;
+    },
+
+    /**
+     * 学期の補講を取得
+     * @param {string} semester - 学期
+     * @returns {array} 補講リスト
+     */
+    getSupplementaryClassesBySemester(semester) {
+        const classes = this.getSupplementaryClasses();
+        return classes.filter(c => c.semester === semester);
     },
 
     // ========== エクスポート/インポート ==========

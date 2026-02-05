@@ -40,13 +40,13 @@
     --gray-800: #1f2937;
     --gray-900: #111827;
 
-    /* Background */
+    /* Background - Dark Theme (default) */
     --bg-gradient-start: #0f172a;
     --bg-gradient-end: #1e1b4b;
     --bg-card: rgba(255, 255, 255, 0.05);
     --bg-card-hover: rgba(255, 255, 255, 0.08);
 
-    /* Text */
+    /* Text - Dark Theme */
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
@@ -72,6 +72,161 @@
     /* Layout */
     --sidebar-width: 280px;
     --sidebar-collapsed: 80px;
+}
+
+/* ========================================
+   Light Theme
+   ======================================== */
+body.light-theme {
+    --bg-gradient-start: #f8fafc;
+    --bg-gradient-end: #e2e8f0;
+    --bg-card: rgba(255, 255, 255, 0.9);
+    --bg-card-hover: rgba(255, 255, 255, 1);
+
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+
+    --border-color: rgba(0, 0, 0, 0.1);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+body.light-theme .sidebar,
+body.light-theme .mobile-header,
+body.light-theme .modal,
+body.light-theme .toast,
+body.light-theme .mobile-semester-bar {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* ========================================
+   Rose Theme
+   ======================================== */
+body.rose-theme {
+    --primary-400: #f472b6;
+    --primary-500: #ec4899;
+    --primary-600: #db2777;
+    --primary-700: #be185d;
+
+    --bg-gradient-start: #1f1020;
+    --bg-gradient-end: #3b1534;
+    --shadow-glow: 0 0 20px rgba(236, 72, 153, 0.3);
+}
+
+body.rose-theme .sidebar {
+    background: linear-gradient(180deg, rgba(59, 21, 52, 0.95) 0%, rgba(31, 16, 32, 0.98) 100%);
+}
+
+body.rose-theme .mobile-header {
+    background: rgba(59, 21, 52, 0.95);
+}
+
+body.rose-theme .mobile-semester-bar {
+    background: rgba(31, 16, 32, 0.95);
+}
+
+/* ========================================
+   Mint Theme
+   ======================================== */
+body.mint-theme {
+    --primary-400: #34d399;
+    --primary-500: #10b981;
+    --primary-600: #059669;
+    --primary-700: #047857;
+
+    --bg-gradient-start: #0f1f1a;
+    --bg-gradient-end: #0d3028;
+    --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+body.mint-theme .sidebar {
+    background: linear-gradient(180deg, rgba(13, 48, 40, 0.95) 0%, rgba(15, 31, 26, 0.98) 100%);
+}
+
+body.mint-theme .mobile-header {
+    background: rgba(13, 48, 40, 0.95);
+}
+
+body.mint-theme .mobile-semester-bar {
+    background: rgba(15, 31, 26, 0.95);
+}
+
+/* ========================================
+   Theme Picker Styles
+   ======================================== */
+.setting-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.theme-picker {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.theme-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.theme-dot:hover {
+    background: var(--bg-card-hover);
+}
+
+.theme-dot.active {
+    border-color: var(--primary-500);
+    background: var(--bg-card);
+}
+
+.theme-dot-inner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-fast);
+}
+
+.theme-dot:hover .theme-dot-inner {
+    transform: scale(1.1);
+}
+
+.theme-dot.active .theme-dot-inner {
+    box-shadow: 0 0 0 3px var(--primary-500), var(--shadow-md);
+}
+
+.theme-dot-inner.dark {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%);
+}
+
+.theme-dot-inner.light {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.theme-dot-inner.rose {
+    background: linear-gradient(135deg, #3b1534 0%, #ec4899 100%);
+}
+
+.theme-dot-inner.mint {
+    background: linear-gradient(135deg, #0d3028 0%, #10b981 100%);
+}
+
+.theme-dot-label {
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
 /* Reset & Base */
@@ -1250,5 +1405,238 @@ body {
     .attendance-btn {
         padding: 8px 12px;
         font-size: 12px;
+    }
+}
+
+/* ========================================
+   FAB (Floating Action Button)
+   ======================================== */
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-500));
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.fab:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: var(--shadow-lg), 0 0 30px rgba(99, 102, 241, 0.5);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .fab {
+        bottom: 24px;
+        right: 16px;
+        width: 52px;
+        height: 52px;
+        font-size: 24px;
+    }
+}
+
+/* ========================================
+   Empty Cell Hover Effects
+   ======================================== */
+.class-cell.empty {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.class-cell.empty::after {
+    content: '＋';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.class-cell.empty:hover {
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+
+.class-cell.empty:hover::after {
+    opacity: 1;
+    color: var(--primary-400);
+}
+
+/* ========================================
+   Empty State with Action Button
+   ======================================== */
+.empty-state-action {
+    margin-top: 16px;
+}
+
+.empty-state-action .btn {
+    display: inline-flex;
+    padding: 10px 20px;
+    font-size: 14px;
+}
+
+.empty-state-link {
+    color: var(--primary-400);
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.empty-state-link:hover {
+    color: var(--primary-300);
+}
+
+/* ========================================
+   Mobile Semester Selector (Fixed Bottom)
+   ======================================== */
+.mobile-semester-bar {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .sidebar-footer {
+        display: none;
+    }
+
+    .mobile-semester-bar {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 12px 20px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid var(--border-color);
+        z-index: 50;
+    }
+
+    .mobile-semester-bar select {
+        width: 100%;
+        padding: 10px 16px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        color: var(--text-primary);
+        font-size: 14px;
+        font-family: inherit;
+    }
+
+    .toast-container {
+        bottom: 80px;
+    }
+}
+
+/* ========================================
+   Supplementary Class (補講) Styles
+   ======================================== */
+.supplementary-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, var(--warning-500), var(--warning-600));
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.supplementary-list-card {
+    margin-top: 1.5rem;
+}
+
+.supplementary-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.supplementary-item:last-child {
+    border-bottom: none;
+}
+
+.supplementary-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.supplementary-date {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.supplementary-period {
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.supplementary-subject {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* Supplementary class attendance card highlight */
+.class-attendance-card.is-supplementary {
+    border: 2px solid var(--warning-500);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.class-attendance-card.is-supplementary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--warning-500);
+}
+
+/* Schedule page actions layout */
+.schedule-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .supplementary-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .supplementary-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 }

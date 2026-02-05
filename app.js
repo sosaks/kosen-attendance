@@ -95,26 +95,52 @@ const App = {
     },
 
     /**
+     * テーマを適用
+     */
+    applyTheme(theme) {
+        const themeClasses = ['light-theme', 'rose-theme', 'mint-theme'];
+        themeClasses.forEach(cls => document.body.classList.remove(cls));
+
+        if (theme !== 'dark') {
+            document.body.classList.add(`${theme}-theme`);
+        }
+    },
+
+    /**
      * 学期セレクターを設定
      */
     setupSemesterSelector() {
         const selector = document.getElementById('semesterSelect');
-        if (!selector) return;
+        const mobileSelector = document.getElementById('mobileSemesterSelect');
+        const currentSemester = Storage.getCurrentSemester();
 
-        // 現在の学期を設定
-        selector.value = Storage.getCurrentSemester();
+        // 両方のセレクターに現在の学期を設定
+        if (selector) selector.value = currentSemester;
+        if (mobileSelector) mobileSelector.value = currentSemester;
 
-        selector.addEventListener('change', () => {
-            Storage.setCurrentSemester(selector.value);
+        const handleChange = (selectedValue, sourceSelector) => {
+            Storage.setCurrentSemester(selectedValue);
+
+            // もう一方のセレクターも同期
+            if (selector && selector !== sourceSelector) selector.value = selectedValue;
+            if (mobileSelector && mobileSelector !== sourceSelector) mobileSelector.value = selectedValue;
 
             // 各モジュールを更新
             Schedule.renderScheduleGrid();
             Dashboard.render();
             Attendance.render();
 
-            const semesterName = selector.value === 'first' ? '前期' : '後期';
+            const semesterName = selectedValue === 'first' ? '前期' : '後期';
             this.showToast(`${semesterName}に切り替えました`, 'success');
-        });
+        };
+
+        if (selector) {
+            selector.addEventListener('change', () => handleChange(selector.value, selector));
+        }
+
+        if (mobileSelector) {
+            mobileSelector.addEventListener('change', () => handleChange(mobileSelector.value, mobileSelector));
+        }
     },
 
     /**
@@ -162,6 +188,49 @@ const App = {
      */
     setupSettings() {
         const settings = Storage.getSettings();
+
+        // テーマピッカー
+        const themePicker = document.getElementById('themePicker');
+        if (themePicker) {
+            const themeClasses = ['light-theme', 'rose-theme', 'mint-theme'];
+            const themeNames = {
+                'dark': 'ダーク 🌙',
+                'light': 'ライト ☀️',
+                'rose': 'ローズ 🩷',
+                'mint': 'ミント 🌿'
+            };
+
+            // 保存されたテーマを適用
+            const savedTheme = settings.theme || 'dark';
+            this.applyTheme(savedTheme);
+
+            // アクティブ状態を設定
+            const activeBtn = themePicker.querySelector(`[data-theme="${savedTheme}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // 各テーマボタンにクリックイベントを設定
+            themePicker.querySelectorAll('.theme-dot').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const theme = btn.dataset.theme;
+
+                    // 全テーマクラスを削除
+                    themeClasses.forEach(cls => document.body.classList.remove(cls));
+
+                    // 選択したテーマを適用
+                    this.applyTheme(theme);
+
+                    // アクティブ状態を更新
+                    themePicker.querySelectorAll('.theme-dot').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // 設定を保存
+                    settings.theme = theme;
+                    Storage.saveSettings(settings);
+
+                    this.showToast(`${themeNames[theme]}に切り替えました`, 'success');
+                });
+            });
+        }
 
         // 通知トグル
         const notificationToggle = document.getElementById('notificationToggle');

@@ -4,33 +4,33 @@
  */
 
 const Dashboard = {
-    /**
-     * 初期化
-     */
-    init() {
-        this.render();
-    },
+  /**
+   * 初期化
+   */
+  init() {
+    this.render();
+  },
 
-    /**
-     * ダッシュボードをレンダリング
-     */
-    render() {
-        this.renderStats();
-        this.renderSubjects();
-        this.renderAlerts();
-    },
+  /**
+   * ダッシュボードをレンダリング
+   */
+  render() {
+    this.renderStats();
+    this.renderSubjects();
+    this.renderAlerts();
+  },
 
-    /**
-     * 統計カードをレンダリング
-     */
-    renderStats() {
-        const container = document.getElementById('statsGrid');
-        if (!container) return;
+  /**
+   * 統計カードをレンダリング
+   */
+  renderStats() {
+    const container = document.getElementById('statsGrid');
+    if (!container) return;
 
-        const semester = Storage.getCurrentSemester();
-        const summary = Calculator.calculateSummary(semester);
+    const semester = Storage.getCurrentSemester();
+    const summary = Calculator.calculateSummary(semester);
 
-        container.innerHTML = `
+    container.innerHTML = `
       <div class="stat-card" style="--stat-color: #6366f1">
         <div class="stat-icon">📚</div>
         <div class="stat-value">${summary.totalSubjects}</div>
@@ -52,37 +52,42 @@ const Dashboard = {
         <div class="stat-label">注意科目数</div>
       </div>
     `;
-    },
+  },
 
-    /**
-     * 科目リストをレンダリング
-     */
-    renderSubjects() {
-        const container = document.getElementById('subjectsList');
-        if (!container) return;
+  /**
+   * 科目リストをレンダリング
+   */
+  renderSubjects() {
+    const container = document.getElementById('subjectsList');
+    if (!container) return;
 
-        const semester = Storage.getCurrentSemester();
-        const allStats = Calculator.calculateAllStats(semester);
+    const semester = Storage.getCurrentSemester();
+    const allStats = Calculator.calculateAllStats(semester);
 
-        if (allStats.length === 0) {
-            container.innerHTML = `
+    if (allStats.length === 0) {
+      container.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">📚</div>
-          <div class="empty-state-text">科目が登録されていません<br>時間割から科目を追加してください</div>
+          <div class="empty-state-text">科目が登録されていません</div>
+          <div class="empty-state-action">
+            <button class="btn btn-primary" onclick="App.navigateTo('schedule')">
+              <span>➕</span> 科目を追加する
+            </button>
+          </div>
         </div>
       `;
-            return;
-        }
+      return;
+    }
 
-        // 出席率の降順でソート
-        const sortedStats = [...allStats].sort((a, b) => a.remainingAbsences - b.remainingAbsences);
+    // 出席率の降順でソート
+    const sortedStats = [...allStats].sort((a, b) => a.remainingAbsences - b.remainingAbsences);
 
-        let html = '';
-        sortedStats.forEach(stats => {
-            const progress = Calculator.calculateProgress(stats);
-            const progressColor = Calculator.getProgressColor(stats.riskLevel);
+    let html = '';
+    sortedStats.forEach(stats => {
+      const progress = Calculator.calculateProgress(stats);
+      const progressColor = Calculator.getProgressColor(stats.riskLevel);
 
-            html += `
+      html += `
         <div class="subject-item">
           <div class="subject-info">
             <div class="subject-color" style="background: ${stats.color}"></div>
@@ -106,46 +111,46 @@ const Dashboard = {
           </div>
         </div>
       `;
-        });
+    });
 
-        container.innerHTML = html;
-    },
+    container.innerHTML = html;
+  },
 
-    /**
-     * アラートをレンダリング
-     */
-    renderAlerts() {
-        const container = document.getElementById('alertsList');
-        if (!container) return;
+  /**
+   * アラートをレンダリング
+   */
+  renderAlerts() {
+    const container = document.getElementById('alertsList');
+    if (!container) return;
 
-        const semester = Storage.getCurrentSemester();
-        const settings = Storage.getSettings();
-        const alertSubjects = Calculator.getAlertSubjects(semester, settings.warningThreshold);
+    const semester = Storage.getCurrentSemester();
+    const settings = Storage.getSettings();
+    const alertSubjects = Calculator.getAlertSubjects(semester, settings.warningThreshold);
 
-        if (alertSubjects.length === 0) {
-            container.innerHTML = `
+    if (alertSubjects.length === 0) {
+      container.innerHTML = `
         <div class="empty-state">
           <div class="empty-state-icon">👍</div>
           <div class="empty-state-text">全ての科目が安全です</div>
         </div>
       `;
-            return;
-        }
+      return;
+    }
 
-        let html = '';
-        alertSubjects.forEach(stats => {
-            const isDanger = stats.remainingAbsences <= 0;
-            const alertClass = isDanger ? '' : 'warning';
-            const icon = isDanger ? '🚨' : '⚠️';
+    let html = '';
+    alertSubjects.forEach(stats => {
+      const isDanger = stats.remainingAbsences <= 0;
+      const alertClass = isDanger ? '' : 'warning';
+      const icon = isDanger ? '🚨' : '⚠️';
 
-            let message = '';
-            if (stats.remainingAbsences <= 0) {
-                message = '欠席上限に達しています！これ以上欠席すると単位が取得できません。';
-            } else {
-                message = `残り欠席可能回数: ${stats.remainingAbsences}回 (遅刻: ${3 - (stats.lateCount % 3)}回で1欠課)`;
-            }
+      let message = '';
+      if (stats.remainingAbsences <= 0) {
+        message = '欠席上限に達しています！これ以上欠席すると単位が取得できません。';
+      } else {
+        message = `残り欠席可能回数: ${stats.remainingAbsences}回 (遅刻: ${3 - (stats.lateCount % 3)}回で1欠課)`;
+      }
 
-            html += `
+      html += `
         <div class="alert-item ${alertClass}">
           <div class="alert-icon">${icon}</div>
           <div class="alert-content">
@@ -154,10 +159,10 @@ const Dashboard = {
           </div>
         </div>
       `;
-        });
+    });
 
-        container.innerHTML = html;
-    }
+    container.innerHTML = html;
+  }
 };
 
 // グローバルに公開
