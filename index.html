@@ -187,6 +187,67 @@
                 </header>
 
                 <div class="settings-content">
+                    <!-- 学校モード設定 -->
+                    <div class="card settings-card">
+                        <div class="card-header">
+                            <h2>🏫 学校モード設定</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="setting-item">
+                                <label for="schoolModeSelect" class="setting-label">学校タイプ</label>
+                                <select id="schoolModeSelect"
+                                    style="width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); margin-top: 0.5rem;">
+                                    <option value="kosen">高専（4限制・90分）</option>
+                                    <option value="custom">カスタム設定</option>
+                                </select>
+                                <p class="setting-description" id="modeDescription">デフォルトの高専モードです</p>
+                            </div>
+
+                            <div id="customSettingsArea"
+                                style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                                <h3 style="font-size: 1rem; margin-bottom: 1rem;">カスタム設定</h3>
+
+                                <div class="form-group">
+                                    <label for="customPeriodCount">授業数（1日あたり）</label>
+                                    <input type="number" id="customPeriodCount" min="4" max="8" value="6"
+                                        style="width: 100%;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>時間割の時間帯</label>
+                                    <div id="customTimeSettings"
+                                        style="display: grid; gap: 0.5rem; margin-top: 0.5rem;">
+                                        <!-- JSで生成 -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="customLateRule">遅刻・早退ルール</label>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="number" id="customLateRule" min="1" max="10" value="3"
+                                            style="width: 60px;">
+                                        <span>回で 1 欠席扱い</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="customAttendanceLimit">欠席許容割合の分母</label>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span>総授業数の 1 / </span>
+                                        <input type="number" id="customAttendanceLimit" min="1" max="10" value="3"
+                                            style="width: 60px;">
+                                        <span> 以上で欠席（単位不認定）</span>
+                                    </div>
+                                    <p style="font-size: 0.8rem; color: #888; margin-top: 4px;">例:
+                                        3を設定すると、授業数の1/3以上休むとアウト</p>
+                                </div>
+
+                                <button id="saveCustomBtn" class="btn btn-primary"
+                                    style="width: 100%; margin-top: 1rem;">カスタム設定を適用</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card settings-card">
                         <div class="card-header">
                             <h2>🎨 テーマ設定</h2>
@@ -416,6 +477,7 @@
 
     <!-- JavaScript -->
     <script src="js/storage.js"></script>
+    <script src="js/mode-config.js"></script>
     <script src="js/calculator.js"></script>
     <script src="js/schedule.js"></script>
     <script src="js/attendance.js"></script>

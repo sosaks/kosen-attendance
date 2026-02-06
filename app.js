@@ -189,6 +189,134 @@ const App = {
     setupSettings() {
         const settings = Storage.getSettings();
 
+        // 学校モード設定
+        const modeConfig = ModeConfig.getCurrentConfig();
+        const modeSelect = document.getElementById('schoolModeSelect');
+        const customArea = document.getElementById('customSettingsArea');
+        const modeDesc = document.getElementById('modeDescription');
+        const customPeriodCount = document.getElementById('customPeriodCount');
+        const customTimeSettings = document.getElementById('customTimeSettings');
+        const customLateRule = document.getElementById('customLateRule');
+        const customAttendanceLimit = document.getElementById('customAttendanceLimit');
+        const saveCustomBtn = document.getElementById('saveCustomBtn');
+
+        if (modeSelect) {
+            // 初期値を設定
+            modeSelect.value = modeConfig.mode;
+            if (modeConfig.mode === 'custom') {
+                customArea.style.display = 'block';
+                modeDesc.textContent = 'カスタム設定が適用されています';
+            } else {
+                customArea.style.display = 'none';
+                modeDesc.textContent = ModeConfig.PRESETS[modeConfig.mode].description;
+            }
+
+            // カスタム設定フォームの初期化
+            if (customPeriodCount) customPeriodCount.value = modeConfig.periodCount;
+            if (customLateRule) customLateRule.value = modeConfig.lateToAbsent;
+            if (customAttendanceLimit) customAttendanceLimit.value = modeConfig.attendanceDenominator || 3;
+
+            // 時間帯設定フォーム生成関数
+            const renderTimeSettings = (count) => {
+                if (!customTimeSettings) return;
+
+                // 現在の設定またはプリセット（高専）をベースにする
+                const currentConfig = ModeConfig.getCurrentConfig();
+                const basePeriods = currentConfig.periods || ModeConfig.PRESETS.kosen.periods;
+
+                let html = '';
+                for (let i = 1; i <= count; i++) {
+                    // 既存の設定があれば維持、なければデフォルト値
+                    const p = basePeriods[i] || { start: '09:00', end: '10:30' };
+                    html += `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="width: 30px; font-weight: bold;">${i}限</span>
+                            <input type="time" class="period-time-input start" data-period="${i}" value="${p.start}" style="padding: 4px; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <span>〜</span>
+                            <input type="time" class="period-time-input end" data-period="${i}" value="${p.end}" style="padding: 4px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        </div>
+                    `;
+                }
+                customTimeSettings.innerHTML = html;
+            };
+
+            // 初期表示
+            renderTimeSettings(modeConfig.periodCount);
+
+
+
+
+
+
+
+            // イベントリスナー（委譲: DOM生成タイミングに依存しない）
+            document.body.addEventListener('change', (e) => {
+                // モード変更
+                if (e.target && e.target.id === 'schoolModeSelect') {
+                    const mode = e.target.value;
+                    if (mode === 'custom') {
+                        if (customArea) customArea.style.display = 'block';
+                        if (modeDesc) modeDesc.textContent = '設定をカスタマイズしてください';
+                        // カスタム選択時は、現在の時限数で再描画
+                        const count = customPeriodCount ? (parseInt(customPeriodCount.value) || 4) : 4;
+                        renderTimeSettings(count);
+
+                        // force input values update if needed
+                        const config = ModeConfig.getCurrentConfig();
+                        if (customPeriodCount && config.mode === 'custom') customPeriodCount.value = config.periodCount;
+                        if (customAttendanceLimit && config.mode === 'custom') customAttendanceLimit.value = config.attendanceDenominator || 3;
+                    } else {
+                        if (customArea) customArea.style.display = 'none';
+                        if (modeDesc) modeDesc.textContent = 'デフォルトの高専モードです';
+                        ModeConfig.applyPreset('kosen');
+                        this.showToast('高専モードに戻しました。リロードします...', 'success');
+                        setTimeout(() => window.location.reload(), 1000);
+                    }
+                }
+                // 時限数変更
+                if (e.target && e.target.id === 'customPeriodCount') {
+                    const count = parseInt(e.target.value);
+                    renderTimeSettings(count);
+                }
+            });
+
+            // 保存ボタン（委譲）
+            document.body.addEventListener('click', (e) => {
+                if (e.target && e.target.id === 'saveCustomBtn') {
+                    e.preventDefault();
+                    const periodCount = parseInt(customPeriodCount.value);
+                    const lateToAbsent = parseInt(customLateRule.value);
+                    const attendanceDenominator = parseInt(customAttendanceLimit ? customAttendanceLimit.value : 3);
+
+                    // 時間帯を取得
+                    const periods = {};
+                    const startInputs = customTimeSettings ? customTimeSettings.querySelectorAll('.period-time-input.start') : [];
+                    const endInputs = customTimeSettings ? customTimeSettings.querySelectorAll('.period-time-input.end') : [];
+
+                    startInputs.forEach((input, index) => {
+                        const period = index + 1;
+                        if (period <= periodCount) {
+                            periods[period] = {
+                                start: input.value,
+                                end: endInputs[index].value
+                            };
+                        }
+                    });
+
+                    ModeConfig.updateCustomConfig({
+                        periodCount,
+                        periods,
+                        lateToAbsent,
+                        earlyToAbsent: lateToAbsent,
+                        attendanceDenominator
+                    });
+
+                    this.showToast('カスタム設定を保存しました。リロードします...', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            });
+        }
+
         // テーマピッカー
         const themePicker = document.getElementById('themePicker');
         if (themePicker) {

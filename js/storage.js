@@ -284,13 +284,22 @@ const Storage = {
     },
 
     /**
-     * 紐付け可能な既存科目を取得（同じ学期で、まだ子科目でない科目）
+     * 紐付け可能な既存科目を取得
      * @param {string} semester - 学期
      * @param {string} excludeId - 除外する科目ID（編集中の科目）
+     * @param {boolean} includeOtherSemester - 通年科目用に別学期も含めるか
      * @returns {array} 紐付け可能な科目の配列
      */
-    getAvailableSubjectsForLinking(semester, excludeId = null) {
-        const subjects = this.getSubjectsBySemester(semester);
+    getAvailableSubjectsForLinking(semester, excludeId = null, includeOtherSemester = false) {
+        let subjects;
+        if (includeOtherSemester && semester === 'second') {
+            // 後期の場合、前期の科目も含める（通年科目用）
+            subjects = this.getSubjects().filter(s =>
+                s.semester === semester || s.semester === 'first'
+            );
+        } else {
+            subjects = this.getSubjectsBySemester(semester);
+        }
         // 子科目でない（linkedSubjectIdがnull/undefined）かつ、自身でない科目
         return subjects.filter(s => !s.linkedSubjectId && s.id !== excludeId);
     },

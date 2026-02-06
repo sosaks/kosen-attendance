@@ -4,12 +4,30 @@
  */
 
 const Schedule = {
-    // 時限の時間帯
-    PERIODS: {
-        1: { start: '08:50', end: '10:20' },
-        2: { start: '10:30', end: '12:00' },
-        3: { start: '13:00', end: '14:30' },
-        4: { start: '14:40', end: '16:10' }
+    /**
+     * 時限の時間帯を取得（ModeConfigから動的取得）
+     */
+    getPeriods() {
+        if (window.ModeConfig) {
+            return ModeConfig.getPeriods();
+        }
+        // フォールバック（高専デフォルト）
+        return {
+            1: { start: '08:50', end: '10:20' },
+            2: { start: '10:30', end: '12:00' },
+            3: { start: '13:00', end: '14:30' },
+            4: { start: '14:40', end: '16:10' }
+        };
+    },
+
+    /**
+     * 時限数を取得
+     */
+    getPeriodCount() {
+        if (window.ModeConfig) {
+            return ModeConfig.getPeriodCount();
+        }
+        return 4; // フォールバック
     },
 
     // 曜日
@@ -22,6 +40,29 @@ const Schedule = {
         this.renderScheduleGrid();
         this.renderSupplementaryList();
         this.setupEventListeners();
+    },
+
+    /**
+     * 時限ドロップダウンを生成
+     * @param {string} elementId - select要素のID
+     * @param {number} selectedValue - 選択する値
+     */
+    populatePeriodDropdown(elementId, selectedValue = 1) {
+        const select = document.getElementById(elementId);
+        if (!select) return;
+
+        const count = this.getPeriodCount();
+        select.innerHTML = '';
+
+        for (let i = 1; i <= count; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `${i}限`;
+            if (i === parseInt(selectedValue)) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        }
     },
 
     /**
@@ -138,15 +179,19 @@ const Schedule = {
 
         let html = '';
 
+        const periods = this.getPeriods();
+        const periodCount = this.getPeriodCount();
+
         // 各時限をループ
-        for (let period = 1; period <= 4; period++) {
+        for (let period = 1; period <= periodCount; period++) {
+            const periodInfo = periods[period] || { start: '00:00', end: '00:00' };
             html += `<div class="schedule-row">`;
 
             // 時限セル
             html += `
         <div class="period-cell">
           ${period}限
-          <div class="period-time">${this.PERIODS[period].start}<br>${this.PERIODS[period].end}</div>
+          <div class="period-time">${periodInfo.start}<br>${periodInfo.end}</div>
         </div>
       `;
 
@@ -195,11 +240,14 @@ const Schedule = {
 
         if (!modal || !form) return;
 
+        // 時限選択肢を更新
+        this.populatePeriodDropdown('subjectPeriod', period);
+
         // フォームをリセット
         form.reset();
         document.getElementById('subjectId').value = '';
         document.getElementById('subjectDay').value = day;
-        document.getElementById('subjectPeriod').value = period;
+        document.getElementById('subjectPeriod').value = period; // リセット後に再設定
         document.getElementById('subjectColor').value = '#6366f1';
 
         // 紐付け科目ドロップダウンを初期化
@@ -230,6 +278,9 @@ const Schedule = {
         document.getElementById('subjectId').value = subject.id;
         document.getElementById('subjectName').value = subject.name;
         document.getElementById('subjectDay').value = subject.dayOfWeek;
+
+        // 時限選択肢を更新
+        this.populatePeriodDropdown('subjectPeriod', subject.period);
         document.getElementById('subjectPeriod').value = subject.period;
         document.getElementById('totalClasses').value = subject.totalClasses;
         document.getElementById('subjectColor').value = subject.color || '#6366f1';
@@ -354,9 +405,10 @@ const Schedule = {
         const semester = Storage.getCurrentSemester();
         const subjects = Storage.getSubjectsBySemester(semester);
 
-        // 全4限のスロットをチェック
+        // 全時限のスロットをチェック
+        const periodCount = this.getPeriodCount();
         const classes = [];
-        for (let period = 1; period <= 4; period++) {
+        for (let period = 1; period <= periodCount; period++) {
             // この時限の補講をチェック
             const supplementary = Storage.getSupplementaryClassForSlot(dateStr, dayOfWeek, period);
 
@@ -396,7 +448,9 @@ const Schedule = {
         if (!dropdown) return;
 
         const semester = Storage.getCurrentSemester();
-        const availableSubjects = Storage.getAvailableSubjectsForLinking(semester, excludeId);
+        // 後期の場合は前期科目も含める（通年科目用）
+        const includeOtherSemester = semester === 'second';
+        const availableSubjects = Storage.getAvailableSubjectsForLinking(semester, excludeId, includeOtherSemester);
 
         // ドロップダウンをリセット
         dropdown.innerHTML = '<option value="">紐付けなし（新規科目）</option>';
@@ -404,9 +458,10 @@ const Schedule = {
         // 紐付け可能な科目を追加
         availableSubjects.forEach(subject => {
             const dayName = this.DAYS[subject.dayOfWeek];
+            const semesterLabel = subject.semester !== semester ? '【前期】' : '';
             const option = document.createElement('option');
             option.value = subject.id;
-            option.textContent = `${subject.name}（${dayName}${subject.period}限）`;
+            option.textContent = `${semesterLabel}${subject.name}（${dayName}${subject.period}限）`;
             dropdown.appendChild(option);
         });
     },
@@ -427,6 +482,9 @@ const Schedule = {
         // 今日の日付をデフォルトに
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('suppDate').value = today;
+
+        // 時限ドロップダウンを初期化
+        this.populatePeriodDropdown('suppPeriod', 1);
 
         // 科目ドロップダウンを初期化
         this.populateSupplementarySubjectDropdown();

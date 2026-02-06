@@ -56,9 +56,12 @@ const Calculator = {
             }
         });
 
-        // 遅刻・早退3回 = 1欠課
-        const lateAbsences = Math.floor(lateCount / 3);
-        const earlyAbsences = Math.floor(earlyCount / 3);
+        // 遅刻・早退 → 欠課変換（ModeConfigから取得）
+        const lateToAbsent = window.ModeConfig ? ModeConfig.getLateToAbsent() : 3;
+        const earlyToAbsent = window.ModeConfig ? ModeConfig.getEarlyToAbsent() : 3;
+        const attendanceDenominator = window.ModeConfig ? ModeConfig.getAttendanceDenominator() : 3;
+        const lateAbsences = Math.floor(lateCount / lateToAbsent);
+        const earlyAbsences = Math.floor(earlyCount / earlyToAbsent);
 
         // 総欠課数
         const totalAbsences = absentCount + lateAbsences + earlyAbsences;
@@ -72,11 +75,12 @@ const Calculator = {
         // 出席数（遅刻・早退は出席としてカウント、ただし3回まで）
         const attendedClasses = presentCount + lateCount + earlyCount;
 
-        // 2/3ルールに基づく必要出席数
-        const requiredAttendance = Math.ceil(totalClasses * (2 / 3));
+        // 欠席上限（1/Nまで）
+        const maxAbsences = Math.floor(totalClasses / attendanceDenominator);
 
-        // 欠席上限（1/3まで）
-        const maxAbsences = Math.floor(totalClasses / 3);
+        // 必要出席数 (総授業数 - 欠席許容数)
+        // ※以前は ceil(total * 2/3) だったが、分母設定に対応するため変更
+        const requiredAttendance = totalClasses - maxAbsences;
 
         // 残り必要出席数
         const remainingRequired = Math.max(0, requiredAttendance - attendedClasses);

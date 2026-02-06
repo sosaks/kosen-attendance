@@ -86,13 +86,14 @@ const Dashboard = {
     sortedStats.forEach(stats => {
       const progress = Calculator.calculateProgress(stats);
       const progressColor = Calculator.getProgressColor(stats.riskLevel);
+      const linkedBadge = stats.isLinked ? '<span class="linked-badge" title="紐付け科目">🔗</span>' : '';
 
       html += `
         <div class="subject-item">
           <div class="subject-info">
             <div class="subject-color" style="background: ${stats.color}"></div>
             <div class="subject-details">
-              <h3>${stats.subjectName}</h3>
+              <h3>${stats.subjectName} ${linkedBadge}</h3>
               <div class="subject-meta">
                 出席: ${stats.attendedClasses}/${stats.totalClasses} | 
                 欠課: ${stats.totalAbsences} | 
